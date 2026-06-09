@@ -1,0 +1,23 @@
+# Virtual environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Streamlit config (local parameters)
+.streamlit/config.toml
+
+# Local outputs
+*.wav
+*.png
+*.zip
+
+# OS metadata
+.DS_Store
+Thumbs.db
