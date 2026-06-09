@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Interactive Frequency Modulation Synthesis Toolbox — explore FM synthesis with real-time audio, waveform visualization, and spectrum analysis.">
+  <title>FM Synthesis Toolbox</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>〰️</text></svg>">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ════════ Header ════════ -->
+  <header class="header">
+    <div class="header__brand">
+      <div class="header__icon">〰️</div>
+      <div>
+        <h1 class="header__title">FM Synthesis Toolbox</h1>
+        <p class="header__subtitle">Frequency Modulation Explorer</p>
+      </div>
+    </div>
+    <div class="header__controls">
+      <button id="playBtn" class="play-btn" title="Play / Stop (Space)">▶</button>
+      <div class="volume-group">
+        <span class="volume-group__icon">🔊</span>
+        <input type="range" id="masterVolume" min="0" max="100" value="40">
+        <span id="masterVolumeVal" class="volume-group__val">40%</span>
+      </div>
+      <div class="status-dot" id="statusDot"></div>
+    </div>
+  </header>
+
+  <!-- ════════ Main Grid ════════ -->
+  <div class="main-grid">
+
+    <!-- ──── Left: Controls ──── -->
+    <div class="controls-col">
+
+      <!-- Carrier -->
+      <section class="panel" id="carrierPanel">
+        <div class="panel__header">
+          <div class="panel__title"><span class="dot dot--cyan"></span> Carrier Oscillator</div>
+          <span class="panel__badge" id="carrierBadge">440 Hz</span>
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-row__label">
+            Frequency <span class="info-tip" data-tip="The main pitch of the output signal. This is the frequency being modulated.">?</span>
+            <span class="ctrl-row__value" id="carrierFreqVal">440.0 Hz</span>
+          </div>
+          <input type="range" id="carrierFreq" min="0" max="100" value="55" step="0.1">
+        </div>
+        <div class="ctrl-row">
+          <div class="ctrl-row__label">
+            Waveform
+            <span class="info-tip" data-tip="Shape of the carrier wave. Sine is pure; others add harmonic overtones.">?</span>
+          </div>
+          <select id="carrierWave" class="wave-select">
+            <option value="sine" selected>▹ Sine</option>
+            <option value="square">▹ Square</option>
+            <option value="sawtooth">▹ Sawtooth</option>
+            <option value="triangle">▹ Triangle</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Modulator -->
+      <section class="panel" id="modulatorPanel">
+        <div class="panel__header">
+          <div class="panel__title"><span class="dot dot--magenta"></span> Modulator</div>
+          <span class="panel__badge" style="background:rgba(255,42,170,0.08);color:var(--magenta);border-color:rgba(255,42,170,0.15)" id="modBadge">440 Hz</span>
+        </div>
+
+        <div class="toggle-row">
+          <span class="toggle-label">Link to Carrier (Ratio Mode)</span>
+          <label class="toggle">
+            <input type="checkbox" id="ratioMode" checked>
+            <span class="toggle__track"></span>
+            <span class="toggle__thumb"></span>
+          </label>
+        </div>
+
+        <div class="ratio-display" id="ratioDisplay">
+          C : M = <span class="rc">1</span> : <span class="rm">1</span>
+        </div>
+
+        <div class="ctrl-row" id="ratioRow">
+          <div class="ctrl-row__label">
+            Harmonicity Ratio
+            <span class="info-tip" data-tip="Ratio of modulator to carrier frequency. Integer ratios produce harmonic tones; non-integer ratios create inharmonic, bell-like sounds.">?</span>
+            <span class="ctrl-row__value ctrl-row__value--magenta" id="ratioVal">1.00</span>
+          </div>
+          <input type="range" class="magenta" id="ratioSlider" min="0" max="100" value="12.5" step="0.1">
+        </div>
+
+        <div class="ctrl-row" id="freeFreqRow" style="display:none;">
+          <div class="ctrl-row__label">
+            Frequency
+            <span class="ctrl-row__value ctrl-row__value--magenta" id="modFreqVal">440.0 Hz</span>
+          </div>
+          <input type="range" class="magenta" id="modFreq" min="0" max="100" value="55" step="0.1">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-row__label">
+            Modulation Index (β)
+            <span class="info-tip" data-tip="Controls how much the modulator affects the carrier. Higher values create richer, more complex spectra with more sidebands.">?</span>
+            <span class="ctrl-row__value ctrl-row__value--purple" id="modIndexVal">2.00</span>
+          </div>
+          <input type="range" class="purple" id="modIndex" min="0" max="250" value="20" step="1">
+        </div>
+
+        <div class="ctrl-row">
+          <div class="ctrl-row__label">Modulator Waveform</div>
+          <select id="modWave" class="wave-select">
+            <option value="sine" selected>▹ Sine</option>
+            <option value="square">▹ Square</option>
+            <option value="sawtooth">▹ Sawtooth</option>
+            <option value="triangle">▹ Triangle</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Envelope -->
+      <section class="panel" id="envelopePanel">
+        <div class="panel__header">
+          <div class="panel__title"><span class="dot dot--green"></span> ADSR Envelope</div>
+        </div>
+        <div class="adsr-grid">
+          <div class="ctrl-row">
+            <div class="ctrl-row__label">Attack <span class="ctrl-row__value ctrl-row__value--green" id="attackVal">0.05s</span></div>
+            <input type="range" class="green" id="attack" min="1" max="2000" value="50">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-row__label">Decay <span class="ctrl-row__value ctrl-row__value--green" id="decayVal">0.20s</span></div>
+            <input type="range" class="green" id="decay" min="1" max="2000" value="200">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-row__label">Sustain <span class="ctrl-row__value ctrl-row__value--green" id="sustainVal">0.70</span></div>
+            <input type="range" class="green" id="sustain" min="0" max="100" value="70">
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-row__label">Release <span class="ctrl-row__value ctrl-row__value--green" id="releaseVal">0.30s</span></div>
+            <input type="range" class="green" id="release" min="1" max="3000" value="300">
+          </div>
+        </div>
+        <div class="envelope-canvas-wrap">
+          <canvas id="envelopeCanvas" class="envelope-canvas"></canvas>
+        </div>
+      </section>
+    </div>
+
+    <!-- ──── Right: Visuals ──── -->
+    <div class="visuals-col">
+
+      <!-- Waveform -->
+      <div class="viz-container">
+        <div class="viz-container__header">
+          <span class="viz-container__title"><span class="dot dot--cyan"></span> Oscilloscope</span>
+          <span class="viz-container__info" id="waveInfo">Time Domain</span>
+        </div>
+        <canvas id="waveformCanvas" class="viz-canvas"></canvas>
+      </div>
+
+      <!-- Spectrum -->
+      <div class="viz-container">
+        <div class="viz-container__header">
+          <span class="viz-container__title"><span class="dot dot--magenta"></span> Spectrum Analyzer</span>
+          <span class="viz-container__info" id="specInfo">Frequency Domain — FFT 2048</span>
+        </div>
+        <canvas id="spectrumCanvas" class="viz-canvas"></canvas>
+      </div>
+
+      <!-- Presets + Formula -->
+      <section class="panel">
+        <div class="panel__header">
+          <div class="panel__title"><span class="dot dot--orange"></span> Presets</div>
+        </div>
+        <div class="presets-bar" id="presetsBar">
+          <button class="preset-btn active" data-preset="init">Init</button>
+          <button class="preset-btn" data-preset="bell">🔔 Bell</button>
+          <button class="preset-btn" data-preset="epiano">🎹 E. Piano</button>
+          <button class="preset-btn" data-preset="bass">🎸 Bass</button>
+          <button class="preset-btn" data-preset="brass">🎺 Brass</button>
+          <button class="preset-btn" data-preset="laser">⚡ Laser</button>
+          <button class="preset-btn" data-preset="metallic">🔩 Metallic</button>
+          <button class="preset-btn" data-preset="organ">🎵 Organ</button>
+          <button class="preset-btn" data-preset="pluck">🪕 Pluck</button>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- ════════ Bottom ════════ -->
+  <div class="bottom-grid">
+
+    <!-- Formula -->
+    <div class="formula-box">
+      <div class="formula-box__title">FM Synthesis Formula</div>
+      <div class="formula-box__content" id="formulaContent">
+        <span class="f-fn">y</span><span class="f-op">(</span>t<span class="f-op">) = </span>
+        <span class="f-fn">sin</span><span class="f-op">(</span>2π <span class="f-op">×</span>
+        <span class="f-carrier" id="fCarrier">440</span>
+        <span class="f-op"> × </span>t
+        <span class="f-op"> + </span>
+        <span class="f-index" id="fIndex">2.00</span>
+        <span class="f-op"> × </span>
+        <span class="f-fn">sin</span><span class="f-op">(</span>2π <span class="f-op">×</span>
+        <span class="f-mod" id="fMod">440</span>
+        <span class="f-op"> × </span>t<span class="f-op">))</span>
+      </div>
+    </div>
+
+    <!-- Keyboard hint -->
+    <div class="formula-box">
+      <div class="formula-box__title">Signal Info</div>
+      <div class="formula-box__content" id="signalInfo" style="white-space:normal; line-height:1.7; font-size:0.78rem;">
+        <span class="f-carrier">Carrier:</span> <span id="sigCarrier">440.0 Hz (Sine)</span><br>
+        <span class="f-mod">Modulator:</span> <span id="sigMod">440.0 Hz (Sine)</span><br>
+        <span class="f-index">Mod Index β:</span> <span id="sigIndex">2.00</span>
+        <span class="f-op"> → </span>
+        <span class="f-fn">Δf = </span><span id="sigDeviation">880 Hz</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ════════ Keyboard ════════ -->
+  <section class="keyboard-section">
+    <div class="keyboard-section__header">
+      <span class="keyboard-section__title"><span class="dot dot--cyan"></span> Keyboard</span>
+      <span class="keyboard-section__hint">Click keys or use keyboard: A–K for white keys, W E T Y U for black keys</span>
+    </div>
+    <div class="keyboard" id="keyboard">
+      <!-- White keys -->
+      <div class="key" data-note="C4"  data-freq="261.63"><span class="key__label">C4</span></div>
+      <div class="key" data-note="D4"  data-freq="293.66"><span class="key__label">D4</span></div>
+      <div class="key" data-note="E4"  data-freq="329.63"><span class="key__label">E4</span></div>
+      <div class="key" data-note="F4"  data-freq="349.23"><span class="key__label">F4</span></div>
+      <div class="key" data-note="G4"  data-freq="392.00"><span class="key__label">G4</span></div>
+      <div class="key" data-note="A4"  data-freq="440.00"><span class="key__label">A4</span></div>
+      <div class="key" data-note="B4"  data-freq="493.88"><span class="key__label">B4</span></div>
+      <div class="key" data-note="C5"  data-freq="523.25"><span class="key__label">C5</span></div>
+      <!-- Black keys -->
+      <div class="key key--black" data-note="C#4" data-freq="277.18" style="left:10.71%"><span class="key__label">C#</span></div>
+      <div class="key key--black" data-note="D#4" data-freq="311.13" style="left:23.21%"><span class="key__label">D#</span></div>
+      <div class="key key--black" data-note="F#4" data-freq="369.99" style="left:48.21%"><span class="key__label">F#</span></div>
+      <div class="key key--black" data-note="G#4" data-freq="415.30" style="left:60.71%"><span class="key__label">G#</span></div>
+      <div class="key key--black" data-note="A#4" data-freq="466.16" style="left:73.21%"><span class="key__label">A#</span></div>
+    </div>
+  </section>
+
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
